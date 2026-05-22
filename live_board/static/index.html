@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Class Blockchain Board</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --ok: #10b981;
+        --warn: #f59e0b;
+        --bad: #ef4444;
+        --line: #334155;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 20% -10%, #1d4ed8 0%, transparent 35%),
+          radial-gradient(circle at 80% 0%, #047857 0%, transparent 30%),
+          var(--bg);
+      }
+
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+
+      h1 {
+        margin: 0 0 16px;
+        font-size: 28px;
+        letter-spacing: 0.4px;
+      }
+
+      .top {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1.3fr 1fr;
+      }
+
+      .panel {
+        background: color-mix(in srgb, var(--panel) 90%, black 10%);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+
+      input, button {
+        border-radius: 8px;
+        border: 1px solid #475569;
+        background: #0b1220;
+        color: var(--text);
+        padding: 9px 10px;
+      }
+
+      button {
+        cursor: pointer;
+        background: #1e293b;
+      }
+
+      button:hover { filter: brightness(1.15); }
+      button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+      .cta-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid #0ea5e9;
+        background: linear-gradient(135deg, #0f766e 0%, #1d4ed8 100%);
+        color: #f8fafc;
+        text-decoration: none;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        box-shadow: 0 10px 20px rgba(14, 165, 233, 0.18);
+        transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      .cta-link:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 24px rgba(14, 165, 233, 0.24);
+      }
+
+      .status {
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .ok { color: var(--ok); }
+      .bad { color: var(--bad); }
+      .warn { color: var(--warn); }
+
+      .mini {
+        font-size: 13px;
+        color: var(--muted);
+        word-break: break-all;
+      }
+
+      .link-btn {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        margin-top: 8px;
+      }
+
+      .tx {
+        font-size: 14px;
+        margin: 2px 0;
+      }
+
+      .queued {
+        margin-top: 8px;
+        border-top: 1px solid var(--line);
+        padding-top: 8px;
+      }
+
+      .rule-box {
+        margin-top: 10px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+      }
+
+      .forge {
+        margin-top: 12px;
+      }
+
+      .stage-badge {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #0b1220;
+      }
+
+      .stage-idle { color: var(--muted); }
+      .stage-warn { color: var(--warn); }
+      .stage-ok { color: var(--ok); }
+      .stage-bad { color: var(--bad); }
+
+      .forge-progress-wrap {
+        height: 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        background: #0b1220;
+        margin: 8px 0 12px;
+      }
+
+      .forge-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #22d3ee 0%, #22c55e 100%);
+        transition: width 0.24s ease;
+      }
+
+      .forge-scene {
+        position: relative;
+        min-height: 180px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .candidate-area {
+        perspective: 1000px;
+        position: relative;
+      }
+
+      .candidate-block {
+        width: 100%;
+        min-height: 150px;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        background: linear-gradient(160deg, #0f172a 0%, #1f2937 100%);
+        padding: 12px;
+        opacity: 0;
+        transform: translateY(26px) rotateX(60deg) scale(0.82);
+        transform-origin: center center;
+        transition: transform 0.55s ease, opacity 0.45s ease, box-shadow 0.35s ease;
+        box-shadow: 0 10px 26px rgba(2, 6, 23, 0.5);
+      }
+
+      .candidate-block.active {
+        opacity: 1;
+        transform: translateY(0) rotateX(10deg) scale(1);
+      }
+
+      .candidate-block.validating {
+        box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4), 0 0 16px rgba(34, 211, 238, 0.45);
+      }
+
+      .candidate-block.connect {
+        transform: translateX(85%) translateY(-14px) rotateX(4deg) scale(0.9);
+        opacity: 0;
+      }
+
+      .candidate-block.shake {
+        animation: shake 0.32s linear 1;
+      }
+
+      .connect-line {
+        position: absolute;
+        top: 50%;
+        right: -4px;
+        width: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #22d3ee 0%, #22c55e 100%);
+        border-radius: 999px;
+        opacity: 0;
+      }
+
+      .connect-line.active {
+        animation: line-grow 0.5s ease forwards;
+      }
+
+      .forge-log {
+        border: 1px dashed #334155;
+        border-radius: 12px;
+        padding: 10px;
+        background: #0b1220;
+      }
+
+      .chain {
+        margin-top: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+        background: color-mix(in srgb, var(--panel) 90%, black 10%);
+        overflow-x: auto;
+      }
+
+      .chain-track {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: max-content;
+        padding-right: 8px;
+      }
+
+      .chain-node {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex: 0 0 auto;
+      }
+
+      .chain-cube {
+        width: 290px;
+        padding-right: 18px;
+        padding-top: 14px;
+      }
+
+      .chain-face-front {
+        position: relative;
+        min-height: 210px;
+        border: 1px solid #475569;
+        border-radius: 11px;
+        background: linear-gradient(160deg, #0f172a 0%, #1f2937 100%);
+        padding: 12px;
+        box-shadow: 0 14px 24px rgba(2, 6, 23, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .chain-face-front::before {
+        content: "";
+        position: absolute;
+        top: 8px;
+        right: -18px;
+        width: 18px;
+        height: calc(100% - 8px);
+        border: 1px solid #475569;
+        border-left: none;
+        border-radius: 0 10px 10px 0;
+        background: linear-gradient(180deg, #334155 0%, #1f2937 100%);
+        transform: skewY(-45deg);
+        transform-origin: left top;
+      }
+
+      .chain-face-front::after {
+        content: "";
+        position: absolute;
+        left: 8px;
+        top: -14px;
+        width: calc(100% - 8px);
+        height: 14px;
+        border: 1px solid #475569;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        background: linear-gradient(180deg, #475569 0%, #334155 100%);
+        transform: skewX(-45deg);
+        transform-origin: left bottom;
+      }
+
+      .chain-cube:hover .chain-face-front {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 26px rgba(2, 6, 23, 0.45);
+      }
+
+      .chain-front-title {
+        margin-bottom: 4px;
+      }
+
+      .chain-front-txs {
+        margin-top: 8px;
+      }
+
+      .chain-link {
+        position: relative;
+        width: 64px;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #22d3ee 0%, #22c55e 100%);
+        box-shadow: 0 0 12px rgba(34, 211, 238, 0.35);
+      }
+
+      .chain-link::after {
+        content: "";
+        position: absolute;
+        right: -2px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-left: 8px solid #22c55e;
+        border-top: 5px solid transparent;
+        border-bottom: 5px solid transparent;
+      }
+
+      @keyframes line-grow {
+        from { width: 0; opacity: 0; }
+        to { width: calc(100% + 8px); opacity: 1; }
+      }
+
+      @keyframes shake {
+        0% { transform: translateX(0) rotateX(10deg) scale(1); }
+        30% { transform: translateX(-8px) rotateX(10deg) scale(1); }
+        60% { transform: translateX(8px) rotateX(10deg) scale(1); }
+        100% { transform: translateX(0) rotateX(10deg) scale(1); }
+      }
+
+      @media (max-width: 900px) {
+        .top { grid-template-columns: 1fr; }
+        .forge-scene { grid-template-columns: 1fr; }
+        .chain-cube { width: 250px; }
+        .chain-link { width: 40px; }
+        .candidate-block.connect {
+          transform: translateY(-12px) rotateX(4deg) scale(0.88);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Blockchain Live Board</h1>
+      <div class="top">
+        <section class="panel">
+          <div class="row">
+            <label>학생 이름 <input id="studentName" value="김민수" /></label>
+            <label>테스트넷 별칭 <input id="onchainAlias" value="학생01" /></label>
+            <label>from <input id="from" value="atlas-01" list="accountOptions" /></label>
+            <label>to <input id="to" value="blaze-02" list="accountOptions" /></label>
+            <label>amount <input id="amount" type="number" value="3" min="1" /></label>
+          </div>
+          <datalist id="accountOptions"></datalist>
+          <div class="row">
+            <button id="submitTxBtn">서버 대기열 등록</button>
+            <button id="mineBtn">서버 대기열 채굴</button>
+            <button id="resetBtn">체인 초기화</button>
+            <a class="cta-link" href="/certificates">수료증 발급 열기</a>
+          </div>
+          <div class="row">
+            <label>difficulty
+              <input id="difficulty" type="number" min="1" max="6" value="3" />
+            </label>
+            <button id="difficultyBtn">난이도 변경(초기화됨)</button>
+          </div>
+          <div class="queued">
+            <strong>서버 대기열</strong>
+            <div id="queueList" class="mini"></div>
+          </div>
+          <div class="rule-box">
+            <strong>계정 추가</strong>
+            <div class="row">
+              <label>label <input id="newAccountLabel" placeholder="예: kite-11" /></label>
+              <label>initial balance <input id="newAccountBalance" type="number" value="20" min="1" /></label>
+            </div>
+            <div class="row">
+              <button id="addAccountBtn">계정 추가</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div id="meta" class="status">loading...</div>
+          <div style="margin-top: 10px;"><strong>Classroom Rules</strong></div>
+          <div id="rules" class="mini"></div>
+          <div style="margin-top: 10px;"><strong>Balances</strong></div>
+          <pre id="balances" class="mini"></pre>
+          <div style="margin-top: 10px;"><strong>Testnet 기록</strong></div>
+          <div id="onchainStatus" class="mini">아직 기록되지 않음</div>
+          <a id="onchainLink" class="link-btn" href="#" target="_blank" rel="noreferrer" style="display: none;">
+            Etherscan 열기
+          </a>
+          <div style="margin-top: 10px;"><strong>최근 메시지</strong></div>
+          <div id="message" class="mini"></div>
+        </section>
+      </div>
+
+      <section class="panel forge">
+        <div class="row">
+          <strong>Block Forge Demo</strong>
+          <span id="forgeStage" class="stage-badge stage-idle">대기</span>
+        </div>
+        <div class="forge-progress-wrap">
+          <div id="forgeProgress" class="forge-progress-bar"></div>
+        </div>
+        <div class="forge-scene">
+          <div class="candidate-area">
+            <article id="candidateBlock" class="candidate-block">
+              <div><strong id="candidateTitle">새 블록 준비</strong></div>
+              <div id="candidateTxs" class="mini" style="margin-top: 8px;"></div>
+              <div id="candidateHash" class="mini" style="margin-top: 8px;">hash: (pending)</div>
+            </article>
+            <div id="connectLine" class="connect-line"></div>
+          </div>
+          <div id="forgeLog" class="forge-log mini">
+            시연 대기 중입니다. 학생 거래를 모은 뒤 채굴을 실행하세요.
+          </div>
+        </div>
+      </section>
+
+      <section class="chain" id="chain"></section>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      let miningInFlight = false;
+      let refreshTimer = null;
+      let progressTimer = null;
+      let lastRenderedChainLength = 0;
+      let classroomConfig = null;
+
+      async function fetchChain() {
+        const r = await fetch("/api/chain");
+        return await r.json();
+      }
+
+      async function fetchBalances() {
+        const r = await fetch("/api/balances");
+        return await r.json();
+      }
+
+      async function fetchPendingTxs() {
+        const r = await fetch("/api/pending_txs");
+        return await r.json();
+      }
+
+      async function fetchClassroomConfig() {
+        const r = await fetch("/api/classroom_config");
+        return await r.json();
+      }
+
+      function shortHash(h) {
+        if (!h) return "";
+        return `${h.slice(0, 12)}...${h.slice(-8)}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function scrollChainToEnd(smooth) {
+        const chain = $("chain");
+        const behavior = smooth ? "smooth" : "auto";
+        requestAnimationFrame(() => {
+          chain.scrollTo({ left: chain.scrollWidth, behavior });
+        });
+      }
+
+      function setForgeStage(text, kind) {
+        const stage = $("forgeStage");
+        stage.textContent = text;
+        stage.className = `stage-badge stage-${kind}`;
+      }
+
+      function setForgeProgress(value) {
+        $("forgeProgress").style.width = `${Math.max(0, Math.min(100, value))}%`;
+      }
+
+      function renderPending(data) {
+        const queueList = $("queueList");
+        if (!data.txs || !data.txs.length) {
+          queueList.textContent = "비어 있음";
+          return;
+        }
+
+        queueList.textContent = data.txs
+          .map((tx, i) => {
+            const studentName = tx.student_name ? ` [${tx.student_name}]` : "";
+            const alias = tx.onchain_alias ? ` {${tx.onchain_alias}}` : "";
+            return `${i + 1}. ${tx.from} -> ${tx.to}: ${tx.amount}${studentName}${alias}`;
+          })
+          .join("\n");
+      }
+
+      function renderClassroomConfig(config) {
+        classroomConfig = config;
+        $("rules").textContent =
+          `accounts=${config.accounts.length} | fee=${config.tx_fee} | max_balance=${config.max_balance}`;
+        $("accountOptions").innerHTML = config.accounts
+          .map((label) => `<option value="${escapeHtml(label)}"></option>`)
+          .join("");
+      }
+
+      function renderChain(data) {
+        const meta = $("meta");
+        meta.innerHTML =
+          `length=${data.length} | difficulty=${data.difficulty} | pending=${data.pending_count} | ` +
+          `<span class="${data.valid ? "ok" : "bad"}">${data.valid ? "VALID" : "INVALID"}</span>`;
+
+        const chain = $("chain");
+        const previousLength = lastRenderedChainLength;
+        const shouldAutoScroll = data.length > previousLength;
+        chain.innerHTML = "";
+
+        if (!data.chain.length) {
+          chain.innerHTML = `<div class="mini">아직 블록이 없습니다.</div>`;
+          lastRenderedChainLength = 0;
+          return;
+        }
+
+        const track = document.createElement("div");
+        track.className = "chain-track";
+
+        data.chain.forEach((b, idx) => {
+          const txsHtml = b.txs
+            .map((tx) => {
+              const studentName = tx.student_name
+                ? ` <span class="mini">(${escapeHtml(tx.student_name)})</span>`
+                : "";
+              const alias = tx.onchain_alias
+                ? ` <span class="mini">[${escapeHtml(tx.onchain_alias)}]</span>`
+                : "";
+              return `<div class="tx">${escapeHtml(tx.from)} -> ${escapeHtml(tx.to)}: ${escapeHtml(tx.amount)}${studentName}${alias}</div>`;
+            })
+            .join("");
+
+          const node = document.createElement("article");
+          node.className = "chain-node";
+          node.innerHTML = `
+            <div class="chain-cube">
+              <div class="chain-face-front">
+                <div class="chain-front-title"><strong>Block #${b.index}</strong></div>
+                <div class="mini">hash: ${shortHash(b.hash)}</div>
+                <div class="mini">prev: ${shortHash(b.prev_hash)}</div>
+                <div class="mini">nonce: ${escapeHtml(b.nonce)}</div>
+                <div class="chain-front-txs"><strong>txs</strong></div>
+                <div>${txsHtml || `<div class="mini">없음</div>`}</div>
+              </div>
+            </div>
+            ${idx < data.chain.length - 1 ? `<div class="chain-link"></div>` : ``}
+          `;
+          track.appendChild(node);
+        });
+
+        chain.appendChild(track);
+        lastRenderedChainLength = data.length;
+        if (shouldAutoScroll) {
+          scrollChainToEnd(previousLength > 0);
+        }
+      }
+
+      function renderCandidateTxs(txs) {
+        const txLines = txs
+          .slice(0, 6)
+          .map((tx) => {
+            const studentName = tx.student_name ? ` (${tx.student_name})` : "";
+            const alias = tx.onchain_alias ? ` [${tx.onchain_alias}]` : "";
+            return `${tx.from} -> ${tx.to}: ${tx.amount}${studentName}${alias}`;
+          })
+          .join("\n");
+
+        $("candidateTxs").textContent = txLines || "tx 없음";
+      }
+
+      async function refresh() {
+        if (miningInFlight) {
+          return;
+        }
+
+        try {
+          const [chainData, balanceData, pendingData] = await Promise.all([
+            fetchChain(),
+            fetchBalances(),
+            fetchPendingTxs(),
+          ]);
+          if (!classroomConfig) {
+            renderClassroomConfig(await fetchClassroomConfig());
+          }
+          renderChain(chainData);
+          renderPending(pendingData);
+          $("balances").textContent = JSON.stringify(balanceData.balances, null, 2);
+          $("difficulty").value = chainData.difficulty;
+        } catch (e) {
+          $("message").textContent = `오류: ${e.message}`;
+        }
+      }
+
+      function msg(text, cls = "") {
+        $("message").textContent = text;
+        $("message").className = cls ? cls : "mini";
+      }
+
+      function renderOnchainStatus(onchain) {
+        const box = $("onchainStatus");
+        const link = $("onchainLink");
+
+        if (!onchain || !onchain.enabled) {
+          box.textContent = "아직 기록되지 않음";
+          box.className = "mini";
+          link.style.display = "none";
+          link.href = "#";
+          return;
+        }
+
+        if (!onchain.recorded) {
+          box.textContent = onchain.error
+            ? `테스트넷 기록 실패: ${onchain.error}`
+            : "테스트넷 기록 안 됨";
+          box.className = "mini warn";
+          link.style.display = "none";
+          link.href = "#";
+          return;
+        }
+
+        box.innerHTML =
+          `테스트넷 기록 완료<br />tx hash: ${escapeHtml(onchain.tx_hash)}<br />` +
+          `onchain block count: ${escapeHtml(onchain.block_count)}`;
+        box.className = "mini ok";
+        link.href = onchain.explorer_url;
+        link.style.display = "inline-flex";
+      }
+
+      function resetCandidateVisual() {
+        const block = $("candidateBlock");
+        block.classList.remove("active", "validating", "connect", "shake");
+        $("connectLine").classList.remove("active");
+        $("candidateHash").textContent = "hash: (pending)";
+      }
+
+      function startProgressRamp() {
+        clearInterval(progressTimer);
+        let value = 18;
+        setForgeProgress(value);
+        progressTimer = setInterval(() => {
+          value = Math.min(92, value + Math.random() * 8);
+          setForgeProgress(value);
+        }, 220);
+      }
+
+      function stopProgressRamp() {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+
+      async function runMineAnimation() {
+        if (miningInFlight) {
+          return;
+        }
+
+        const pendingData = await fetchPendingTxs();
+        if (!pendingData.txs || !pendingData.txs.length) {
+          msg("대기열이 비어 있습니다.", "warn");
+          return;
+        }
+
+        miningInFlight = true;
+        $("mineBtn").disabled = true;
+        setForgeStage("블록 생성", "warn");
+        $("forgeLog").textContent = `대기열 거래 ${pendingData.count}건으로 새 블록 생성 중...`;
+        $("candidateTitle").textContent = "Candidate Block";
+        renderCandidateTxs(pendingData.txs);
+        resetCandidateVisual();
+        setForgeProgress(6);
+        await sleep(120);
+        $("candidateBlock").classList.add("active");
+
+        await sleep(520);
+        setForgeStage("검증 중 (hash/PoW)", "warn");
+        $("candidateBlock").classList.add("validating");
+        startProgressRamp();
+
+        let response;
+        let data;
+        try {
+          response = await fetch("/api/mine_pending", { method: "POST" });
+          data = await response.json();
+        } catch (e) {
+          stopProgressRamp();
+          setForgeStage("검증 실패", "bad");
+          $("candidateBlock").classList.remove("validating");
+          $("candidateBlock").classList.add("shake");
+          $("forgeLog").textContent = `네트워크 오류: ${e.message}`;
+          msg(`채굴 실패: ${e.message}`, "bad");
+          miningInFlight = false;
+          $("mineBtn").disabled = false;
+          await sleep(900);
+          setForgeProgress(0);
+          setForgeStage("대기", "idle");
+          resetCandidateVisual();
+          await refresh();
+          return;
+        }
+
+        stopProgressRamp();
+        setForgeProgress(100);
+
+        if (!response.ok) {
+          setForgeStage("검증 실패", "bad");
+          $("candidateBlock").classList.remove("validating");
+          $("candidateBlock").classList.add("shake");
+          $("forgeLog").textContent = `검증 실패: ${data.error}`;
+          msg(`채굴 실패: ${data.error}`, "bad");
+          miningInFlight = false;
+          $("mineBtn").disabled = false;
+          await sleep(900);
+          setForgeProgress(0);
+          setForgeStage("대기", "idle");
+          resetCandidateVisual();
+          await refresh();
+          return;
+        }
+
+        setForgeStage("검증 완료", "ok");
+        $("candidateHash").textContent = `hash: ${shortHash(data.block.hash)}`;
+        const rejectedCount = data.rejected ? data.rejected.length : 0;
+        $("forgeLog").textContent =
+          `Block #${data.block.index} 검증 완료. accepted=${data.accepted.length}, rejected=${rejectedCount}`;
+
+        await sleep(240);
+        $("connectLine").classList.add("active");
+        $("candidateBlock").classList.remove("validating");
+        await sleep(320);
+        $("candidateBlock").classList.add("connect");
+        setForgeStage("체인 연결", "ok");
+
+        await sleep(520);
+        miningInFlight = false;
+        $("mineBtn").disabled = false;
+        await refresh();
+        renderOnchainStatus(data.onchain);
+        if (data.onchain && data.onchain.recorded) {
+          msg(
+            `채굴 완료: block #${data.block.index}, 테스트넷 기록 완료, rejected=${rejectedCount}`,
+            "ok"
+          );
+        } else if (data.onchain && data.onchain.enabled) {
+          msg(
+            `채굴 완료: block #${data.block.index}, 테스트넷 기록 실패, rejected=${rejectedCount}`,
+            "warn"
+          );
+        } else {
+          msg(`채굴 완료: block #${data.block.index}, rejected=${rejectedCount}`, "ok");
+        }
+        setForgeStage("연결 완료", "ok");
+
+        await sleep(900);
+        setForgeProgress(0);
+        setForgeStage("대기", "idle");
+        resetCandidateVisual();
+      }
+
+      $("submitTxBtn").onclick = async () => {
+        const studentName = $("studentName").value.trim();
+        const onchainAlias = $("onchainAlias").value.trim();
+        const from = $("from").value.trim();
+        const to = $("to").value.trim();
+        const amount = Number($("amount").value);
+
+        if (!from || !to || amount <= 0) {
+          msg("거래 입력값이 유효하지 않습니다.", "bad");
+          return;
+        }
+
+        const tx = { from, to, amount };
+        if (studentName) {
+          tx.student_name = studentName;
+        }
+        if (onchainAlias) {
+          tx.onchain_alias = onchainAlias;
+        }
+
+        const r = await fetch("/api/submit_tx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(tx),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          msg(`등록 실패: ${data.error}`, "bad");
+          return;
+        }
+
+        msg(`등록 완료: pending=${data.pending_count}`, "ok");
+        await refresh();
+      };
+
+      $("mineBtn").onclick = runMineAnimation;
+
+      $("resetBtn").onclick = async () => {
+        await fetch("/api/reset", { method: "POST" });
+        msg("체인을 초기화했습니다.", "ok");
+        renderOnchainStatus(null);
+        resetCandidateVisual();
+        setForgeProgress(0);
+        setForgeStage("대기", "idle");
+        await refresh();
+      };
+
+      $("difficultyBtn").onclick = async () => {
+        const difficulty = Number($("difficulty").value);
+        const r = await fetch("/api/difficulty", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ difficulty }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          msg(`난이도 변경 실패: ${data.error}`, "bad");
+          return;
+        }
+        msg(`난이도를 ${difficulty}로 변경하고 체인을 초기화했습니다.`, "ok");
+        resetCandidateVisual();
+        setForgeProgress(0);
+        setForgeStage("대기", "idle");
+        await refresh();
+      };
+
+      $("addAccountBtn").onclick = async () => {
+        const label = $("newAccountLabel").value.trim();
+        const initialBalance = Number($("newAccountBalance").value);
+        if (!label || initialBalance <= 0) {
+          msg("계정 입력값이 유효하지 않습니다.", "bad");
+          return;
+        }
+
+        const r = await fetch("/api/accounts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ label, initial_balance: initialBalance }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          msg(`계정 추가 실패: ${data.error}`, "bad");
+          return;
+        }
+
+        classroomConfig = await fetchClassroomConfig();
+        renderClassroomConfig(classroomConfig);
+        $("newAccountLabel").value = "";
+        msg(`계정 추가 완료: ${data.account.label}`, "ok");
+        await refresh();
+      };
+
+      setForgeStage("대기", "idle");
+      refresh();
+      refreshTimer = setInterval(refresh, 2500);
+    </script>
+  </body>
+</html>

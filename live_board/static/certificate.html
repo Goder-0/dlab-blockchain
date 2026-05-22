@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Certificate Mint</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --ok: #10b981;
+        --bad: #ef4444;
+        --line: #334155;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 20% -10%, #1d4ed8 0%, transparent 35%),
+          radial-gradient(circle at 80% 0%, #047857 0%, transparent 30%),
+          var(--bg);
+      }
+
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
+      }
+
+      .panel {
+        background: color-mix(in srgb, var(--panel) 90%, black 10%);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+
+      .mini {
+        font-size: 14px;
+        color: var(--muted);
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 10px 0;
+      }
+
+      input, button {
+        border-radius: 8px;
+        border: 1px solid #475569;
+        background: #0b1220;
+        color: var(--text);
+        padding: 10px 12px;
+      }
+
+      input {
+        min-width: 220px;
+      }
+
+      button, a.button-link {
+        cursor: pointer;
+        background: #1e293b;
+        text-decoration: none;
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+      }
+
+      button:hover, a.button-link:hover {
+        filter: brightness(1.15);
+      }
+
+      .ok { color: var(--ok); }
+      .bad { color: var(--bad); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="panel">
+        <div class="row" style="justify-content: space-between;">
+          <div>
+            <h1>수료증 발급</h1>
+            <div class="mini">학생 지갑 주소만 입력하면 기본값으로 Sepolia 테스트넷 수료증을 발급합니다.</div>
+          </div>
+          <a class="button-link" href="/">보드로 돌아가기</a>
+        </div>
+
+        <div class="row">
+          <label>지갑 주소 <input id="certRecipient" style="min-width: 380px;" placeholder="0x..." /></label>
+        </div>
+        <div class="row">
+          <button id="mintCertificateBtn">수료증 발급</button>
+        </div>
+        <div id="message" class="mini">아직 발급되지 않음</div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      $("mintCertificateBtn").onclick = async () => {
+        const payload = {
+          recipient: $("certRecipient").value.trim(),
+        };
+
+        if (!payload.recipient) {
+          $("message").textContent = "입력값이 유효하지 않습니다.";
+          $("message").className = "mini bad";
+          return;
+        }
+
+        const r = await fetch("/api/mint_certificate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          $("message").textContent = `발급 실패: ${data.error}`;
+          $("message").className = "mini bad";
+          return;
+        }
+
+        $("message").innerHTML =
+          `발급 완료<br />token id: ${escapeHtml(data.token_id)}<br />tx hash: ${escapeHtml(data.tx_hash)}<br />` +
+          `<a class="button-link" href="${escapeHtml(data.explorer_url)}" target="_blank" rel="noreferrer">Etherscan 열기</a>`;
+        $("message").className = "mini ok";
+      };
+    </script>
+  </body>
+</html>

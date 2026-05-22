@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Vote</title>
+    <style>
+      :root {
+        --bg: #f6f8fc;
+        --panel: rgba(255, 255, 255, 0.88);
+        --text: #0f172a;
+        --muted: #64748b;
+        --line: #cbd5e1;
+        --accent: #0f766e;
+        --accent-2: #1d4ed8;
+        --ok: #15803d;
+        --bad: #b91c1c;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 10% 0%, rgba(29, 78, 216, 0.16), transparent 22%),
+          radial-gradient(circle at 100% 0%, rgba(15, 118, 110, 0.18), transparent 28%),
+          linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      }
+
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 28px 16px 56px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        padding: 20px;
+        box-shadow: 0 18px 36px rgba(30, 41, 59, 0.08);
+        backdrop-filter: blur(12px);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 6px 11px;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 118, 110, 0.2);
+        background: rgba(15, 118, 110, 0.08);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      input, select, button {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        padding: 12px 14px;
+        font: inherit;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--text);
+      }
+
+      button {
+        border: none;
+        font-weight: 700;
+        color: white;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      }
+
+      .status {
+        min-height: 22px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .ok { color: var(--ok); }
+      .bad { color: var(--bad); }
+
+      .option-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .option-card {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid rgba(15, 118, 110, 0.18);
+        background: linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(238,244,255,0.92) 100%);
+      }
+
+      .mini {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .history {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .history-item {
+        border-radius: 16px;
+        border: 1px solid rgba(29, 78, 216, 0.14);
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .result-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 280px 1fr;
+        align-items: center;
+        margin-top: 12px;
+      }
+
+      .chart-wrap {
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+      }
+
+      .donut {
+        width: 210px;
+        height: 210px;
+        border-radius: 50%;
+        background: conic-gradient(
+          #0f766e 0deg 120deg,
+          #1d4ed8 120deg 240deg,
+          #f59e0b 240deg 360deg
+        );
+        position: relative;
+        box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+      }
+
+      .donut::after {
+        content: "";
+        position: absolute;
+        inset: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.6);
+      }
+
+      .donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        z-index: 1;
+        text-align: center;
+      }
+
+      .donut-total {
+        font-size: 34px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .donut-label {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.2;
+      }
+
+      .legend {
+        display: grid;
+        gap: 10px;
+      }
+
+      .legend-item {
+        display: grid;
+        gap: 4px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .legend-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .legend-left {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+      }
+
+      .count {
+        font-weight: 700;
+      }
+
+      @media (max-width: 820px) {
+        .grid { grid-template-columns: 1fr; }
+        .result-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="grid">
+        <section class="panel stack">
+          <span class="badge">Class Vote</span>
+          <div>
+            <h1>오늘의 투표</h1>
+            <p>의견을 고르고 제출해 보세요.</p>
+          </div>
+          <div class="option-grid">
+            <article class="option-card">
+              <strong>0. 찬성</strong>
+              <div class="mini" style="margin-top: 6px;">이 제안에 동의합니다.</div>
+            </article>
+            <article class="option-card">
+              <strong>1. 반대</strong>
+              <div class="mini" style="margin-top: 6px;">다른 방식이 더 낫다고 생각합니다.</div>
+            </article>
+            <article class="option-card">
+              <strong>2. 보류</strong>
+              <div class="mini" style="margin-top: 6px;">조금 더 정보가 필요합니다.</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel">
+          <form id="voteForm" class="stack">
+            <label>학생 이름
+              <input id="label" placeholder="예: 김민수" />
+            </label>
+            <label>선택
+              <select id="option">
+                <option value="0">0. 찬성</option>
+                <option value="1">1. 반대</option>
+                <option value="2">2. 보류</option>
+              </select>
+            </label>
+            <button type="submit">투표 제출</button>
+            <div id="status" class="status"></div>
+          </form>
+        </section>
+      </div>
+
+      <section class="panel" style="margin-top: 16px;">
+        <strong>현재 투표 현황</strong>
+        <div id="summary" class="mini" style="margin-top: 8px;">불러오는 중...</div>
+        <div class="result-grid">
+          <div class="chart-wrap">
+            <div id="donut" class="donut">
+              <div class="donut-center">
+                <div id="donutTotal" class="donut-total">0</div>
+                <div class="donut-label">총 제출 수</div>
+              </div>
+            </div>
+          </div>
+          <div id="legend" class="legend"></div>
+        </div>
+        <div id="history" class="history"></div>
+      </section>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const OPTION_META = [
+        { value: "0", label: "찬성", color: "#0f766e" },
+        { value: "1", label: "반대", color: "#1d4ed8" },
+        { value: "2", label: "보류", color: "#f59e0b" },
+      ];
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      async function fetchItems() {
+        const res = await fetch("/api/vote_submissions");
+        return await res.json();
+      }
+
+      async function postItem(payload) {
+        const res = await fetch("/api/vote_submissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || "submit failed");
+        return body;
+      }
+
+      function buildChart(data) {
+        const counts = new Map(OPTION_META.map((item) => [item.value, 0]));
+        data.items.forEach((item) => {
+          counts.set(item.option, (counts.get(item.option) || 0) + 1);
+        });
+
+        const total = data.items.length;
+        $("donutTotal").textContent = String(total);
+
+        let angleStart = 0;
+        const segments = OPTION_META.map((item) => {
+          const count = counts.get(item.value) || 0;
+          const portion = total === 0 ? 1 / OPTION_META.length : count / total;
+          const angleEnd = angleStart + portion * 360;
+          const segment = `${item.color} ${angleStart}deg ${angleEnd}deg`;
+          angleStart = angleEnd;
+          return segment;
+        });
+
+        $("donut").style.background = `conic-gradient(${segments.join(", ")})`;
+
+        $("legend").innerHTML = OPTION_META.map((item) => {
+          const count = counts.get(item.value) || 0;
+          const percent = total === 0 ? 0 : Math.round((count / total) * 100);
+          return `
+            <article class="legend-item">
+              <div class="legend-top">
+                <div class="legend-left">
+                  <span class="swatch" style="background:${item.color}"></span>
+                  <strong>${item.value}. ${item.label}</strong>
+                </div>
+                <span class="count">${count}표</span>
+              </div>
+              <div class="mini">${percent}%</div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function render(data) {
+        $("summary").textContent = `현재 제출 수: ${data.count}`;
+        buildChart(data);
+        const history = $("history");
+        if (!data.items.length) {
+          history.innerHTML = `<div class="mini">아직 제출이 없습니다.</div>`;
+          return;
+        }
+        history.innerHTML = data.items.slice().reverse().map((item) => `
+          <article class="history-item">
+            <div><strong>${escapeHtml(item.label)}</strong> · ${escapeHtml((OPTION_META.find((meta) => meta.value === item.option) || { label: item.option }).label)}</div>
+          </article>
+        `).join("");
+      }
+
+      async function refresh() {
+        render(await fetchItems());
+      }
+
+      $("voteForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = $("status");
+        status.className = "status";
+        status.textContent = "제출 중...";
+        try {
+          await postItem({
+            label: $("label").value.trim(),
+            option: $("option").value,
+          });
+          status.className = "status ok";
+          status.textContent = "투표가 제출되었습니다.";
+          $("voteForm").reset();
+          $("option").value = "0";
+          await refresh();
+        } catch (error) {
+          status.className = "status bad";
+          status.textContent = error.message;
+        }
+      });
+
+      refresh();
+    </script>
+  </body>
+</html>

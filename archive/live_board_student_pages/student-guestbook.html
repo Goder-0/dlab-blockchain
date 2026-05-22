@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Student Guestbook</title>
+    <style>
+      :root {
+        --bg: #fffaf2;
+        --panel: rgba(255, 255, 255, 0.86);
+        --text: #172033;
+        --muted: #6b7280;
+        --line: #ead7b8;
+        --accent: #c2410c;
+        --accent-2: #be123c;
+        --ok: #15803d;
+        --bad: #b91c1c;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at 0% 10%, rgba(194, 65, 12, 0.14), transparent 24%),
+          radial-gradient(circle at 100% 0%, rgba(190, 18, 60, 0.14), transparent 22%),
+          linear-gradient(180deg, #fffdf8 0%, #fff2dd 100%);
+      }
+
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 28px 16px 56px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 0.95fr 1.05fr;
+      }
+
+      .panel {
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 20px;
+        box-shadow: 0 18px 38px rgba(120, 53, 15, 0.08);
+        backdrop-filter: blur(10px);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 31px;
+        letter-spacing: -0.03em;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .ticket {
+        margin-top: 16px;
+        border-radius: 22px;
+        padding: 18px;
+        border: 1px dashed rgba(194, 65, 12, 0.35);
+        background: linear-gradient(135deg, rgba(255,255,255,0.86) 0%, rgba(255,243,224,0.92) 100%);
+      }
+
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      input, textarea, button {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        padding: 12px 14px;
+        font: inherit;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.9);
+      }
+
+      textarea {
+        min-height: 108px;
+        resize: vertical;
+      }
+
+      button {
+        cursor: pointer;
+        border: none;
+        color: white;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      }
+
+      .status {
+        min-height: 22px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .ok { color: var(--ok); }
+      .bad { color: var(--bad); }
+
+      .entries {
+        display: grid;
+        gap: 12px;
+      }
+
+      .entry {
+        border-radius: 18px;
+        border: 1px solid rgba(194, 65, 12, 0.16);
+        background: rgba(255, 255, 255, 0.74);
+        padding: 14px;
+      }
+
+      .mini {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 820px) {
+        .grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="grid">
+        <section class="panel">
+          <h1>방명록</h1>
+          <p>짧은 메시지를 남겨보세요.</p>
+          <div class="ticket">
+            <strong>예시</strong>
+            <p style="margin-top: 8px;">"김민수가 오늘 PoW 채굴 실습을 완료했습니다."</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <form id="guestbookForm" class="stack">
+            <label>학생 이름
+              <input id="author" placeholder="예: 김민수" maxlength="32" />
+            </label>
+            <label>메시지
+              <textarea id="message" placeholder="예: 오늘 PoW 채굴 실습 완료" maxlength="160"></textarea>
+            </label>
+            <button type="submit">메시지 남기기</button>
+            <div id="status" class="status"></div>
+          </form>
+        </section>
+      </div>
+
+      <section class="panel" style="margin-top: 16px;">
+        <strong>최근 메시지</strong>
+        <div id="summary" class="mini" style="margin-top: 8px;">불러오는 중...</div>
+        <div id="entries" class="entries" style="margin-top: 12px;"></div>
+      </section>
+    </div>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      async function fetchItems() {
+        const res = await fetch("/api/guestbook_entries");
+        return await res.json();
+      }
+
+      async function postItem(payload) {
+        const res = await fetch("/api/guestbook_entries", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error || "submit failed");
+        return body;
+      }
+
+      function render(data) {
+        $("summary").textContent = `현재 메시지 수: ${data.count}`;
+        const entries = $("entries");
+        if (!data.items.length) {
+          entries.innerHTML = `<div class="mini">아직 메시지가 없습니다.</div>`;
+          return;
+        }
+        entries.innerHTML = data.items.slice().reverse().map((item) => `
+          <article class="entry">
+            <div><strong>${escapeHtml(item.author)}</strong></div>
+            <div style="margin-top: 8px;">${escapeHtml(item.message)}</div>
+          </article>
+        `).join("");
+      }
+
+      async function refresh() {
+        render(await fetchItems());
+      }
+
+      $("guestbookForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = $("status");
+        status.className = "status";
+        status.textContent = "전송 중...";
+        try {
+          await postItem({
+            author: $("author").value.trim(),
+            message: $("message").value.trim(),
+          });
+          status.className = "status ok";
+          status.textContent = "메시지가 저장되었습니다.";
+          $("guestbookForm").reset();
+          await refresh();
+        } catch (error) {
+          status.className = "status bad";
+          status.textContent = error.message;
+        }
+      });
+
+      refresh();
+    </script>
+  </body>
+</html>

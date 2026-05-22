@@ -1,0 +1,15 @@
+{
+  "name": "Blockchain Special Lecture Certificate",
+  "description": "블록체인 특강 수료증",
+  "image": "https://raw.githubusercontent.com/your-org/your-repo/main/blockchain_certificate.png",
+  "attributes": [
+    {
+      "trait_type": "Course",
+      "value": "Blockchain Special Lecture"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Certificate"
+    }
+  ]
+}
