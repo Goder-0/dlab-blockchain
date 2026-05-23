@@ -27,6 +27,10 @@
 4. `tx hash`와 탐색기로 증빙 확인
 5. 학생 지갑 주소를 받아 `ClassCertificate`로 수료증 발급
 
+현재 수료증 컨트랙트:
+- `0x3DCa45584025Ede440e0F8F84e10c85B83434173`
+- Blockscout: `https://eth-sepolia.blockscout.com/token/0x3DCa45584025Ede440e0F8F84e10c85B83434173`
+
 ## 준비
 
 ```bash
@@ -79,6 +83,7 @@ https://raw.githubusercontent.com/<owner>/<repo>/main/certificate_metadata.json
 ```
 
 이 값을 넣어두면 웹 발급 페이지에서는 지갑 주소만 입력해도 동일한 수료증 이미지를 가진 토큰이 발급됩니다.
+이미지 확인은 Etherscan보다 Blockscout 쪽이 더 안정적이므로, 발급 후에는 Blockscout NFT 페이지를 기준으로 보여주는 편이 좋습니다.
 
 ## 참고
 

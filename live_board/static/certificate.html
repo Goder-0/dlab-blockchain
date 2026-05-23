@@ -93,7 +93,7 @@
         <div class="row" style="justify-content: space-between;">
           <div>
             <h1>수료증 발급</h1>
-            <div class="mini">학생 지갑 주소만 입력하면 기본값으로 Sepolia 테스트넷 수료증을 발급합니다.</div>
+            <div class="mini">학생 지갑 주소만 입력하면 기본값으로 Sepolia 테스트넷 수료증을 발급합니다. 발급 후 Blockscout에서 이미지를 바로 확인할 수 있습니다.</div>
           </div>
           <a class="button-link" href="/">보드로 돌아가기</a>
         </div>
@@ -145,7 +145,10 @@
 
         $("message").innerHTML =
           `발급 완료<br />token id: ${escapeHtml(data.token_id)}<br />tx hash: ${escapeHtml(data.tx_hash)}<br />` +
-          `<a class="button-link" href="${escapeHtml(data.explorer_url)}" target="_blank" rel="noreferrer">Etherscan 열기</a>`;
+          `<div class="row" style="margin-top: 8px;">` +
+          `<a class="button-link" href="${escapeHtml(data.token_explorer_url)}" target="_blank" rel="noreferrer">Blockscout에서 수료증 보기</a>` +
+          `<a class="button-link" href="${escapeHtml(data.tx_explorer_url)}" target="_blank" rel="noreferrer">Blockscout 거래 보기</a>` +
+          `</div>`;
         $("message").className = "mini ok";
       };
     </script>

@@ -1,8 +1,9 @@
 import argparse
 import json
 from datetime import date
+import os
 
-from common import get_account, get_address, make_web3, send_contract_call
+from common import get_account, get_address, load_env, make_web3, send_contract_call
 
 CERTIFICATE_ABI = [
     {
@@ -39,6 +40,9 @@ CERTIFICATE_ABI = [
         "type": "function",
     },
 ]
+
+SEPOLIA_BLOCKSCOUT_TX_BASE = "https://eth-sepolia.blockscout.com/tx"
+SEPOLIA_BLOCKSCOUT_TOKEN_BASE = "https://eth-sepolia.blockscout.com/token"
 
 
 def build_parser():
@@ -80,13 +84,14 @@ def main():
     course_title = ask_if_empty(args.course_title, "Course title: ")
     issued_at = ask_if_empty(args.issued_at, "Issued date label: ")
     token_uri = args.token_uri
+    if token_uri == "":
+        load_env()
+        token_uri = os.getenv("CERTIFICATE_TOKEN_URI", "").strip()
 
     w3 = make_web3()
     account = get_account(w3)
-    contract = w3.eth.contract(
-        address=get_address("CERTIFICATE_ADDRESS"),
-        abi=CERTIFICATE_ABI,
-    )
+    contract_address = get_address("CERTIFICATE_ADDRESS")
+    contract = w3.eth.contract(address=contract_address, abi=CERTIFICATE_ABI)
 
     checksum_recipient = w3.to_checksum_address(recipient)
     tx_hash, receipt = send_contract_call(
@@ -122,7 +127,8 @@ def main():
             indent=2,
         ),
     )
-    print("explorer_url:", f"https://sepolia.etherscan.io/tx/{tx_hash}")
+    print("tx_explorer_url:", f"{SEPOLIA_BLOCKSCOUT_TX_BASE}/{tx_hash}")
+    print("token_explorer_url:", f"{SEPOLIA_BLOCKSCOUT_TOKEN_BASE}/{contract_address}/{int(token_id)}")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,10 @@ from common import get_account, get_address, load_env, make_web3, send_contract_
 
 app = Flask(__name__, static_folder="static")
 
+SEPOLIA_ETHERSCAN_TX_BASE = "https://sepolia.etherscan.io/tx"
+SEPOLIA_BLOCKSCOUT_TX_BASE = "https://eth-sepolia.blockscout.com/tx"
+SEPOLIA_BLOCKSCOUT_TOKEN_BASE = "https://eth-sepolia.blockscout.com/token"
+
 TRANSACTION_LEDGER_ABI = [
     {
         "inputs": [
@@ -344,10 +348,8 @@ def _mint_onchain_certificate(item):
     try:
         w3 = make_web3()
         account = get_account(w3)
-        contract = w3.eth.contract(
-            address=get_address("CERTIFICATE_ADDRESS"),
-            abi=CERTIFICATE_ABI,
-        )
+        contract_address = get_address("CERTIFICATE_ADDRESS")
+        contract = w3.eth.contract(address=contract_address, abi=CERTIFICATE_ABI)
         recipient = w3.to_checksum_address(item["recipient"])
         tx_hash, receipt = send_contract_call(
             contract.functions.issueCertificate(
@@ -368,7 +370,10 @@ def _mint_onchain_certificate(item):
             "receipt_status": int(receipt.status),
             "token_id": int(token_id),
             "recipient": recipient,
-            "explorer_url": f"https://sepolia.etherscan.io/tx/{tx_hash}",
+            "tx_explorer_url": f"{SEPOLIA_BLOCKSCOUT_TX_BASE}/{tx_hash}",
+            "etherscan_tx_url": f"{SEPOLIA_ETHERSCAN_TX_BASE}/{tx_hash}",
+            "token_explorer_url": f"{SEPOLIA_BLOCKSCOUT_TOKEN_BASE}/{contract_address}/{int(token_id)}",
+            "contract_address": contract_address,
         }
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": str(exc)}

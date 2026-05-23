@@ -69,11 +69,12 @@ python3 live_board/server.py
   - 로컬 블록 생성
   - accepted / rejected 거래 구분
   - Sepolia 테스트넷 기록 시도
-  - `tx hash`, `Etherscan 열기` 표시
+  - `tx hash`, 탐색기 링크 표시
 - 수료증 발급은 `/certificates` 전용 페이지에서:
   - 학생 지갑 주소만 입력
   - 나머지 값은 기본값 사용
   - 바로 민팅 가능
+  - 발급 후 `Blockscout에서 수료증 보기`로 이미지 확인 가능
 
 ## 테스트넷 연결
 
@@ -97,6 +98,10 @@ python3 live_board/server.py
 - `certificate_metadata.json`의 `image` 값을 해당 GitHub raw URL로 바꿉니다.
 - `onchain_lab/.env`의 `CERTIFICATE_TOKEN_URI`에 metadata JSON의 raw URL을 넣습니다.
 - 그러면 `/certificates` 페이지에서는 지갑 주소만 입력해도 기본 metadata URL이 같이 들어갑니다.
+
+현재 수료증 컨트랙트:
+- `0x3DCa45584025Ede440e0F8F84e10c85B83434173`
+- Blockscout: `https://eth-sepolia.blockscout.com/token/0x3DCa45584025Ede440e0F8F84e10c85B83434173`
 
 ## 문서
 
